@@ -34,6 +34,9 @@ CAVEATS
     email addresses. Most addresses associated with valid MTAs will
     return *undef*.
 
+CREDITS
+    Idea by Raz Information Systems, http://www.raz.co.il.
+
 AUTHOR
     Ariel Brosh, schop@cpan.org.
 

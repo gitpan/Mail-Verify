@@ -4,13 +4,14 @@ use Net::DNS;
 use IO::Socket;
 require Exporter;
 use strict;
-use vars qw(@ISA @EXPORT_OK $BAD $VERSION);
+use vars qw(@ISA @EXPORT_OK $BAD $VERSION $first);
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(isfake $BAD);
 
-$VERSION = '0.00';
+$VERSION = '0.01';
 
 $BAD = "SMTP response not understood";
+
 
 sub isfake ($;$) {
 	my @tokens = split(/\@/, shift);
@@ -27,48 +28,59 @@ sub isfake ($;$) {
 		$mx = $mx[0]->exchange;
 	}
 	my $sock = new IO::Socket::INET("$mx:25") || return undef;
-	my $result = step1($sock);
+	my $result = step1($sock, join('@', @tokens));
 	close($sock);
 	$result;
 }
 
 sub step1 {
-	my $sock = shift;
+	my ($sock, $email) = @_;
 	return $BAD unless code($sock) == 220;
-	print $sock "HELO Mail-Check\r\n";
+	$first = 1;
+	out($sock, "HELO Mail-Check");
 	return $BAD unless code($sock) == 250;
-	print $sock "EXPN $tokens[0]\@$tokens[1]\r\n";
+	out($sock, "EXPN $email");
 	my $code = code($sock);
-	return step2($sock) if ($code == 502);
+	return step2($sock, $email) if ($code == 502);
 	return "" if ($code == 250);
 	return "bogus username" if ($code == 550);
 	return $BAD;
 }
 
 sub step2 {
-	my $sock = shift;
-	print $sock "VRFY $tokens[0]\@$tokens[1]\r\n";
-	return step3($sock) if ($code == 252);
+	my ($sock, $email) = @_;
+	out($sock, "VRFY $email");
+	my $code = code($sock);
+	return step3($sock, $email) if ($code == 252);
 	return "bogus username" if ($code == 550);
 	return "" if ($code == 250);
 	return $BAD;
 }
 
 sub step3 {
-	my $sock = shift;
-	print $sock "MAIL FROM:<>\r\n";
+	my ($sock, $email) = @_;
+	out($sock, "MAIL FROM:<>");
 	return $BAD unless code($sock) == 250;
-	print $sock "RCPT TO:<$tokens[0]\@$tokens[1]>\r\n";
+	out($sock, "RCPT TO:<$email>");
+	my $code = code($sock);
 	return "bogus username" if ($code == 550);
 	return "" if ($code == 250);
 	return $BAD;
 }
 
+sub out ($$) {
+	my ($sock, $text) = @_;
+	$sock->send("$text\n");
+}
+
 sub code ($) {
-	my $sock = shift;
+	my ($sock) = @_;
 	my $line = <$sock>;
-	my @tokens = split(/\s+/, $line);
-	$tokens[0];
+	my @tokens = split(/[- ]+/, $line);
+	my $ret = $tokens[0];
+	return code($sock) if $first && $ret == 220;
+	$first = undef;
+	return $ret;
 }
 
 1;
@@ -113,6 +125,10 @@ with junk mail. Therefore, this is not an excellent solution
 to check the fill-out forms in your site for users supplying
 false email addresses. Most addresses associated with valid MTAs
 will return I<undef>.
+
+=head1 CREDITS
+
+Idea by Raz Information Systems, http://www.raz.co.il.
 
 =head1 AUTHOR
 

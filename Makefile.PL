@@ -17,4 +17,5 @@ WriteMakefile(
     'NAME'	=> 'Mail::Verify',
     'VERSION_FROM' => 'Verify.pm', # finds $VERSION
     'dist' => {'COMPRESS' => 'gzip --best --force'},
+    'PREREQ_PM' => {'Net::DNS' => 0},
 );

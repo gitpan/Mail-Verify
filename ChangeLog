@@ -1,0 +1,8 @@
+# $Id: ChangeLog,v 1.4 2001/07/26 18:38:08 petef Exp $
+
+* 7/26/2001 13:56:46 EDT - Pete Fritchman <petef@databits.net>
+  - Initial revision complete (version 0.01)
+
+* 7/26/2001 14:31:51 EDT - Pete Fritchman <petef@databits.net>
+  - CVS Id tags added
+  - Version 0.01 uploaded to CPAN

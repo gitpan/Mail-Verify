@@ -1,51 +1,42 @@
-# $Id: README,v 1.1.1.1 2001/07/26 18:33:27 petef Exp $
-
 NAME
-    Mail::Verify - Utility to verify an email address
+    Mail::Verify - Perl extension for validation of email addresses
 
 SYNOPSIS
-        use Mail::Verify;
+      use Mail::Verify qw(isfake);
+
+      $reason = isfake('bill@microsoft.com');
+      if ($reason) {
+        print "Bad email: $reason\n";
+      } elsif (defined($reason)) {
+        print "Email address perfect\n";
+      } else {
+        print "Could not verify email address: EXPN is turned off at target computer";
+      }
+
+      $reason = isfake('bigboss', 'mail.acme.com');
+      ...
 
 DESCRIPTION
-    `Mail::Verify' provides a function CheckAddress function for verifying
-    email addresses. First the syntax of the email address is checked, then
-    it verifies that there is at least one valid MX server accepting email
-    for the domain. Using the Net::DNS manpage and the IO::Socket manpage a
-    list of MX records (or, falling back on a hosts A record) are checked to
-    make sure at least one SMTP server is accepting connections.
+    This module checks validity of email addresses. It ensure the
+    existence of a username and domain, unless you specified the
+    MTA, searches the DNS for the MTA (if not specified), and then
+    attempts to use the SMTP keyword EXPN to verify the username.
+    Since EXPN is usually turned off, the module will return *undef*
+    in such cases, and defined but false if the verification passed.
+    If for any reason the check failed, the module will return a
+    string describing the reason.
 
-ERRORS
-    Here are a list of return codes and what they mean:
+CAVEATS
+    Contemporary ISPs never turn EXPN on, to prevent mail abusers
+    harass more efficiently by molesting only existing addresses
+    with junk mail. Therefore, this is not an excellent solution to
+    check the fill-out forms in your site for users supplying false
+    email addresses. Most addresses associated with valid MTAs will
+    return *undef*.
 
-    0
-    The email address appears to be valid.
+AUTHOR
+    Ariel Brosh, schop@cpan.org.
 
-    1
-    No email address was supplied.
-
-    2
-    There is a syntaxical error in the email address.
-
-    3
-    There are no DNS entries for the host in question (no MX records or A
-    records).
-
-    4
-    There are no live SMTP servers accepting connections for this email
-    address.
-
-EXAMPLES
-    This example shows obtaining an email address from a form field and
-    verifying it.
-
-      use CGI qw/:standard/;
-      use Mail::Verify;
-      my $q = new CGI;
-      [...]
-      my $email = $q->param("emailaddr");
-      my $email_ck = Mail::Verify::CheckAddress( $email );
-      if( $email_ck ) {
-          print '<h1>Form input error: Invalid email address.</h1>';
-      }
-      [...]
+SEE ALSO
+    perl(1).
 
